@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<paths>
+	<!-- Path must end with a \ -->
+	<path>
+		<dept>IT</dept>
+		<destination>NET</destination>
+		<from>\\192.168.10.197\C$\Users\KHOURYNJ\Desktop\test_move\it\local\OUT\</from>
+		<to>\\192.168.10.197\C$\Users\KHOURYNJ\Desktop\test_move\it\net\IN\</to>
+	</path>
+	<path>
+		<dept>IT</dept>
+		<destination>LAN</destination>
+		<from>\\192.168.10.197\C$\Users\KHOURYNJ\Desktop\test_move\it\net\OUT\</from>
+		<to>\\192.168.10.197\C$\Users\KHOURYNJ\Desktop\test_move\it\local\IN\</to>
+	</path>
+</paths>

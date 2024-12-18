@@ -1,0 +1,28 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Extentions>
+	<type>doc</type>
+	<type>docx</type>
+	<type>xls</type>
+	<type>xlsx</type>
+	<type>pptx</type>
+	<type>ppt</type>
+	<type>vsdx</type>
+	<type>vsd</type>
+	<type>jpg</type>
+	<type>jpeg</type>
+	<type>tif</type>
+	<type>txt</type>
+	<type>xml</type>
+	<type>msg</type>
+	<type>pdf</type>
+	<type>png</type>
+	<type>gif</type>
+	<type>jfif</type>
+	<type>srt</type>
+	<!--this extension for retail bill file's extension ".new" -->
+	<type>cat</type>
+	<!--this extension for retail bill file's extension ".new" -->
+	<type>new</type>
+	<!--this extension for retail bill file's extension ".new" -->
+	<type>dwg</type>
+</Extentions>

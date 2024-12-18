@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+<Configuration>
+	<Duration>5s</Duration>
+	<DatabaseIP>127.0.0.1</DatabaseIP>
+	<MaxFileSize>300M</MaxFileSize>
+	<BackupPath>\\192.168.10.197\C$\Users\khourynj\Desktop\test_move\audit\</BackupPath>
+	<Admins>mourado,daouda</Admins>
+	<Developers>khourynj,saabn</Developers>
+</Configuration>
