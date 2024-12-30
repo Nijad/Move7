@@ -1,5 +1,7 @@
 ﻿using Move7.Helper;
 using Move7.Model;
+using System.Security.AccessControl;
+using System.Security.Principal;
 //test 2 
 //test branch
 internal class Program
@@ -8,12 +10,33 @@ internal class Program
 
     static void Main(string[] args)
     {
-        bool createdNew;
-        const string mutexName = "Global\\MyUniqueApplicationName"; // "Global" ensures visibility across all sessions
         try
         {
-            using (Mutex mutex = new Mutex(true, mutexName, out createdNew))
+            bool isNewInstance;
+            const string mutexName = "Global\\MyUniqueApplicationName"; // "Global" ensures visibility across all sessions
+            // Create security settings for the mutex
+            MutexSecurity security = new MutexSecurity();
+
+            // Allow all users to access the mutex
+            SecurityIdentifier everyoneSid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
+            security.AddAccessRule(new MutexAccessRule(
+                everyoneSid,
+                MutexRights.FullControl,
+                AccessControlType.Allow
+            ));
+
+            using (Mutex mutex = new Mutex(false, mutexName, out isNewInstance))
             {
+                if (!isNewInstance)
+                {
+                    Console.WriteLine("Program is already running.");
+                    Console.WriteLine("Press Enter to exit.");
+                    Console.ReadLine();
+                    return;
+                }
+                // Apply security settings to the mutex
+                mutex.SetAccessControl(security);
+
                 XML xML;
 
                 Console.WriteLine("Start Move Program");
@@ -117,17 +140,29 @@ internal class Program
                         Console.WriteLine(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
                         Console.WriteLine($"{ex.Message}");
                         Console.WriteLine($"please check log");
-                        Console.WriteLine("Program will exit. Press Enter to continue");
+                        Console.WriteLine("Program will exit. Press Enter to exit");
                         Console.ReadLine();
                         return;
                     }
                 }
             }
         }
-        catch (Exception ex)
+        catch (PlatformNotSupportedException ex)
+        {
+            Console.WriteLine("Access Control List (ACL) APIs are part of resource management on Windows and are not supported on this platform.");
+            Console.WriteLine("Press Enter to exit.");
+            Console.ReadLine();
+        }
+        catch (UnauthorizedAccessException ex)
         {
             Console.WriteLine("Program is already running.");
-            Console.WriteLine("Press any key to continue.");
+            Console.WriteLine("Press Enter to exit.");
+            Console.ReadLine();
+        }
+        catch
+        {
+            Console.WriteLine("Something went wrong.");
+            Console.WriteLine("Press Enter to exit.");
             Console.ReadLine();
         }
     }
