@@ -11,8 +11,11 @@
 
   <ItemGroup>
     <Compile Remove="bin\**" />
+    <Compile Remove="bin\Debug\net8.0\AssetFiles\**" />
     <EmbeddedResource Remove="bin\**" />
+    <EmbeddedResource Remove="bin\Debug\net8.0\AssetFiles\**" />
     <None Remove="bin\**" />
+    <None Remove="bin\Debug\net8.0\AssetFiles\**" />
   </ItemGroup>
 
   <ItemGroup>

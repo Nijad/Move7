@@ -18,7 +18,7 @@ namespace Move7.Helper
             {
                 FileInfo fileInfo = new FileInfo(file);
                 string ext = fileInfo.Extension.Substring(1, fileInfo.Extension.Length - 1);
-                
+
                 try
                 {
                     List<string> s = file.Split('\\', StringSplitOptions.RemoveEmptyEntries).ToList();
@@ -47,14 +47,34 @@ namespace Move7.Helper
                 {
                     continue;
                 }
-                //check file size
-                if (!CheckFileSize(fileInfo))
+
+                try
                 {
-                    string msg = "file size is grater than max file size ({Configuration.MaxFileSize} bytes)";
-                    msg += $"\nfile name : {fileInfo.Name} - dept : {path.Dept} - destination : {path.Destination}";
-                    Logging.WriteNotes(msg);
+                    if (fileInfo.Length > Configuration.MaxFileSize)
+                    {
+                        string msg = "file size is grater than max file size ({Configuration.MaxFileSize} bytes)";
+                        msg += $"\nfile name : {fileInfo.Name} - dept : {path.Dept} - destination : {path.Destination}";
+                        Logging.WriteNotes(msg);
+                        //move file to rejected folder
+                        MoveToRejected(fileInfo, "size");
+                        continue;
+                    }
+                    else if (file.Length == 0)
+                        continue;
+                }
+                catch
+                {
                     continue;
                 }
+
+                //check file size
+                //if (!CheckFileSize(fileInfo))
+                //{
+                //    string msg = "file size is grater than max file size ({Configuration.MaxFileSize} bytes)";
+                //    msg += $"\nfile name : {fileInfo.Name} - dept : {path.Dept} - destination : {path.Destination}";
+                //    Logging.WriteNotes(msg);
+                //    continue;
+                //}
 
                 //check file extension
                 if (!CheckFileExtension())
@@ -62,6 +82,7 @@ namespace Move7.Helper
                     string msg = "file extension is not in allowed extensions list";
                     msg += $"\nfile name : {fileInfo.Name} - dept : {path.Dept} - destination : {path.Destination}";
                     Logging.WriteNotes(msg);
+                    MoveToRejected(fileInfo, "extension");
                     continue;
                 }
 
@@ -108,6 +129,17 @@ namespace Move7.Helper
 
                 dB.Commit(cmd);
             }
+        }
+
+        private static void MoveToRejected(FileInfo file, string rejectedReason)
+        {
+            string rejectedDirectory = path.From + $"rejected\\{rejectedReason}";
+            if (!Directory.Exists(rejectedDirectory))
+                Directory.CreateDirectory(rejectedDirectory);
+
+            string datetime = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+            string[] fileParts = file.Name.Split('.');
+            file.MoveTo($"{rejectedDirectory}\\{fileParts[0]}-{datetime}.{fileParts[1]}");
         }
 
         private static void DeleteFile(string backupFile)
@@ -217,6 +249,22 @@ namespace Move7.Helper
             {
                 return false;
             }
+        }
+
+        private static int CheckSize(FileInfo file)
+        {
+            try
+            {
+                if (file.Length > Configuration.MaxFileSize)
+                    return 0;
+                else if (file.Length == 0)
+                    return -1;
+            }
+            catch
+            {
+                return 0;
+            }
+            return 1;
         }
 
         private static bool CheckFileSize(FileInfo file)
