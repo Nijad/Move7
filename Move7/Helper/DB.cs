@@ -6,8 +6,9 @@ namespace Move7.Helper
     {
         string connectionString;
         MySqlConnection con;
-        public DB(string server)
+        public DB()
         {
+            string server = "127.0.0.1";
             string database = "movedb";
             string username = "moveuser";
             string password = "Move@123";

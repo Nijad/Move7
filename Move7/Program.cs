@@ -96,7 +96,7 @@ internal class Program
                 }
 
                 Console.WriteLine("Test Connection Database...");
-                DB dB = new DB(Configuration.DatabaseIP);
+                DB dB = new DB();
                 try
                 {
                     dB.CheckDatabaseConnection();

@@ -67,15 +67,6 @@ namespace Move7.Helper
                     continue;
                 }
 
-                //check file size
-                //if (!CheckFileSize(fileInfo))
-                //{
-                //    string msg = "file size is grater than max file size ({Configuration.MaxFileSize} bytes)";
-                //    msg += $"\nfile name : {fileInfo.Name} - dept : {path.Dept} - destination : {path.Destination}";
-                //    Logging.WriteNotes(msg);
-                //    continue;
-                //}
-
                 //check file extension
                 if (!CheckFileExtension())
                 {
@@ -87,7 +78,7 @@ namespace Move7.Helper
                 }
 
                 //start write in database
-                DB dB = new DB(Configuration.DatabaseIP);
+                DB dB = new DB();
                 MySqlCommand cmd = null;
                 try
                 {
@@ -244,34 +235,6 @@ namespace Move7.Helper
             try
             {
                 return Configuration.Extensions.Contains(fileType.Extension);
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        private static int CheckSize(FileInfo file)
-        {
-            try
-            {
-                if (file.Length > Configuration.MaxFileSize)
-                    return 0;
-                else if (file.Length == 0)
-                    return -1;
-            }
-            catch
-            {
-                return 0;
-            }
-            return 1;
-        }
-
-        private static bool CheckFileSize(FileInfo file)
-        {
-            try
-            {
-                return (file.Length <= Configuration.MaxFileSize && file.Length != 0);
             }
             catch
             {

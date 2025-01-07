@@ -118,8 +118,6 @@ namespace Move7.Helper
                 }
                 Configuration.MaxFileSize = maxFileSize;
 
-                Configuration.DatabaseIP = configuration["DatabaseIP"].InnerText;
-
                 Configuration.BackupPath = configuration["BackupPath"].InnerText;
 
                 Configuration.Admins = configuration["Admins"].InnerText.Split(',').ToList();
