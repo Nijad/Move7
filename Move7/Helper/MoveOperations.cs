@@ -59,7 +59,7 @@ namespace Move7.Helper
                         MoveToRejected(fileInfo, "size");
                         continue;
                     }
-                    else if (file.Length == 0)
+                    else if (fileInfo.Length == 0)
                         continue;
                 }
                 catch
