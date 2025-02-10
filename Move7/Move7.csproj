@@ -19,6 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspose.Email" Version="25.1.0" />
     <PackageReference Include="Mime" Version="3.7.0" />
     <PackageReference Include="MySqlConnector" Version="2.4.0" />
     <PackageReference Include="System.IO.Packaging" Version="9.0.0" />

@@ -1,4 +1,5 @@
-﻿using HeyRed.Mime;
+﻿using Aspose.Email.Mapi;
+using HeyRed.Mime;
 using Move7.Model;
 using MySqlConnector;
 
@@ -8,6 +9,7 @@ namespace Move7.Helper
     {
         static PathInfo path;
         static FileType fileType;
+        static FileInfo fileInfo;
         internal static void MoveFiles(PathInfo pathInfo)
         {
             path = pathInfo;
@@ -16,15 +18,16 @@ namespace Move7.Helper
             //loop for all files above
             foreach (string file in files)
             {
-                FileInfo fileInfo = new FileInfo(file);
+                fileInfo = new FileInfo(file);
                 string ext = fileInfo.Extension.Substring(1, fileInfo.Extension.Length - 1);
 
+                //get file type
                 try
                 {
                     List<string> s = file.Split('\\', StringSplitOptions.RemoveEmptyEntries).ToList();
                     string[] d = s[s.Count - 1].Split('.', StringSplitOptions.RemoveEmptyEntries);
                     string g = string.Join('\\', s.Take(s.Count - 1));
-                    //string f = string.Join('.', d.Take(d.Length - 1));
+                    //get extension if there are many dots in file name
                     g = $"\\\\{g}\\e.{d[d.Length - 1]}";
                     //rename file before chech file type
                     //because it does not work with arabic name files
@@ -49,6 +52,17 @@ namespace Move7.Helper
                     continue;
                 }
 
+                //check file extension and type
+                if (!CheckFileExtension())
+                {
+                    string msg = "file extension is not in allowed extensions list";
+                    msg += $"\nfile name : {fileInfo.Name} - dept : {path.Dept} - destination : {path.Destination}";
+                    Logging.WriteNotes(msg);
+                    MoveToRejected(fileInfo, "extension");
+                    continue;
+                }
+
+                //check file size
                 try
                 {
                     if (fileInfo.Length > Configuration.MaxFileSize)
@@ -65,16 +79,6 @@ namespace Move7.Helper
                 }
                 catch
                 {
-                    continue;
-                }
-
-                //check file extension
-                if (!CheckFileExtension())
-                {
-                    string msg = "file extension is not in allowed extensions list";
-                    msg += $"\nfile name : {fileInfo.Name} - dept : {path.Dept} - destination : {path.Destination}";
-                    Logging.WriteNotes(msg);
-                    MoveToRejected(fileInfo, "extension");
                     continue;
                 }
 
@@ -219,13 +223,31 @@ namespace Move7.Helper
             }
         }
 
-        private static bool CheckFileExtension()
+        private static bool CheckFileExtension(bool firstCall = true)
         {
             if (fileType.Extension.ToLower() == "bin")
-                if (fileType.MimeType.ToLower() == "application/vnd.ms-outlook")
+                if (fileType.MimeType.ToLower() == "application/vnd.ms-outlook" && firstCall)
+                {
+                    MapiMessage email = MapiMessage.FromMailMessage(fileInfo.FullName);
+                    foreach (MapiAttachment attachment in email.Attachments)
+                    {
+                        if (attachment.MimeTag == "message/rfc822")
+                            return false;
+                        fileType = MimeGuesser.GuessFileType(attachment.BinaryData);
+                        if (!CheckFileExtension(false))
+                            return false;
+                        
+                    }
                     return true;
+                }
+                else
+                {
+                    return false;
+                }
+
             if (fileType.MimeType.ToLower() == "text/xml")
                 return true;
+            
             if (fileType.MimeType.ToLower() == "application/vnd.ms-visio.drawing.main+xml")
                 return true;
 
@@ -242,6 +264,7 @@ namespace Move7.Helper
                 return false;
             }
         }
+
 
         private static string[] GetAllFiles(string from)
         {
