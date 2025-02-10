@@ -98,10 +98,11 @@ namespace Move7.Helper
         public MySqlCommand InsertIntoTable(string name, string extension, string realExtension,
             long size, string dept, string destination)
         {
+            string escapedValue = MySqlHelper.EscapeString(name);
             try
             {
                 string query = "INSERT INTO `movedfiles`(`name`, `Ext`, `RealExt`, `size`, `Dept`, `Destination`) " +
-                    $"VALUES ('{name}', '{extension}', '{realExtension}', '{size}', '{dept}', '{destination}')";
+                    $"VALUES ('{escapedValue}', '{extension}', '{realExtension}', '{size}', '{dept}', '{destination}')";
                 MySqlCommand cmd = ExecuteTransaction(query);
                 return cmd;
             }
