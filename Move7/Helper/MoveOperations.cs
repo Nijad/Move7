@@ -22,9 +22,10 @@ namespace Move7.Helper
                 try
                 {
                     List<string> s = file.Split('\\', StringSplitOptions.RemoveEmptyEntries).ToList();
-                    string[] d = s[s.Count - 1].Split('.');
+                    string[] d = s[s.Count - 1].Split('.', StringSplitOptions.RemoveEmptyEntries);
                     string g = string.Join('\\', s.Take(s.Count - 1));
-                    g = $"\\\\{g}\\e.{d[1]}";
+                    //string f = string.Join('.', d.Take(d.Length - 1));
+                    g = $"\\\\{g}\\e.{d[d.Length - 1]}";
                     //rename file before chech file type
                     //because it does not work with arabic name files
                     fileInfo.MoveTo(g);
