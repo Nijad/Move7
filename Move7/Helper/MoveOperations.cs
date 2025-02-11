@@ -19,8 +19,14 @@ namespace Move7.Helper
             foreach (string file in files)
             {
                 fileInfo = new FileInfo(file);
-                string ext = fileInfo.Extension.Substring(1, fileInfo.Extension.Length - 1);
-
+                string ext;
+                if (fileInfo.Extension.Length > 0)
+                    ext = fileInfo.Extension.Substring(1, fileInfo.Extension.Length - 1);
+                else
+                {
+                    MoveToRejected(fileInfo, "extension");
+                    continue;
+                }
                 //get file type
                 try
                 {
@@ -135,7 +141,10 @@ namespace Move7.Helper
 
             string datetime = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
             string[] fileParts = file.Name.Split('.');
-            file.MoveTo($"{rejectedDirectory}\\{fileParts[0]}-{datetime}.{fileParts[1]}");
+            if (fileParts.Length > 1)
+                file.MoveTo($"{rejectedDirectory}\\{fileParts[0]}-{datetime}.{fileParts[fileParts.Length - 1]}");
+            else
+                file.MoveTo($"{rejectedDirectory}\\{fileParts[0]}-{datetime}");
         }
 
         private static void DeleteFile(string backupFile)
@@ -236,7 +245,7 @@ namespace Move7.Helper
                         fileType = MimeGuesser.GuessFileType(attachment.BinaryData);
                         if (!CheckFileExtension(false))
                             return false;
-                        
+
                     }
                     return true;
                 }
@@ -247,7 +256,7 @@ namespace Move7.Helper
 
             if (fileType.MimeType.ToLower() == "text/xml")
                 return true;
-            
+
             if (fileType.MimeType.ToLower() == "application/vnd.ms-visio.drawing.main+xml")
                 return true;
 
