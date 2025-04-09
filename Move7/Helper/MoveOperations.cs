@@ -10,6 +10,7 @@ namespace Move7.Helper
         static PathInfo path;
         static FileType fileType;
         static FileInfo fileInfo;
+        static string[] allowedExtensions;
         internal static void MoveFiles(PathInfo pathInfo)
         {
             path = pathInfo;
@@ -73,7 +74,7 @@ namespace Move7.Helper
                 {
                     if (fileInfo.Length > Configuration.MaxFileSize)
                     {
-                        string msg = "file size is grater than max file size ({Configuration.MaxFileSize} bytes)";
+                        string msg = $"file size is grater than max file size ({Configuration.MaxFileSize} bytes)";
                         msg += $"\nfile name : {fileInfo.Name} - dept : {path.Dept} - destination : {path.Destination}";
                         Logging.WriteNotes(msg);
                         //move file to rejected folder
@@ -130,6 +131,35 @@ namespace Move7.Helper
                 }
 
                 dB.Commit(cmd);
+            }
+        }
+
+        internal static void MoveFiles(DeptMoveData deptMoveData)
+        {
+            if (deptMoveData.ExtIn != null)
+            {
+                allowedExtensions = deptMoveData.ExtIn;
+                PathInfo pathInfo = new()
+                {
+                    Dept = deptMoveData.Dept,
+                    Destination = "local",
+                    From = deptMoveData.NetPath + "//OUT",
+                    To = deptMoveData.LocalPath + "//IN"
+                };
+                MoveFiles(pathInfo);
+            }
+
+            if (deptMoveData.ExtOut != null)
+            {
+                allowedExtensions = deptMoveData.ExtOut;
+                PathInfo pathInfo = new()
+                {
+                    Dept = deptMoveData.Dept,
+                    Destination = "net",
+                    From = deptMoveData.LocalPath + "//OUT",
+                    To = deptMoveData.NetPath + "//IN"
+                };
+                MoveFiles(pathInfo);
             }
         }
 
@@ -234,8 +264,11 @@ namespace Move7.Helper
 
         private static bool CheckFileExtension(bool firstCall = true)
         {
+            if (!allowedExtensions.Contains(fileType.Extension))
+                return false;
+
             if (fileType.Extension.ToLower() == "bin")
-                if (fileType.MimeType.ToLower() == "application/vnd.ms-outlook" && firstCall)
+                if (firstCall && fileType.MimeType.ToLower() == "application/vnd.ms-outlook")
                 {
                     MapiMessage email = MapiMessage.FromMailMessage(fileInfo.FullName);
                     foreach (MapiAttachment attachment in email.Attachments)
@@ -245,33 +278,31 @@ namespace Move7.Helper
                         fileType = MimeGuesser.GuessFileType(attachment.BinaryData);
                         if (!CheckFileExtension(false))
                             return false;
-
                     }
                     return true;
                 }
                 else
-                {
                     return false;
-                }
 
-            if (fileType.MimeType.ToLower() == "text/xml")
+            if (fileType.Extension.ToLower() == "xml" && fileType.MimeType.ToLower() == "text/xml")
                 return true;
 
-            if (fileType.MimeType.ToLower() == "application/vnd.ms-visio.drawing.main+xml")
+            if (fileType.Extension.ToLower() == "vsdx" && fileType.MimeType.ToLower() == "application/vnd.ms-visio.drawing.main+xml")
                 return true;
 
-            if (fileType.Extension.ToLower() == "thmx")
+            if (fileType.Extension.ToLower() == "thmx")//powerpoint template 
                 if (fileType.MimeType.ToLower() == "application/vnd.ms-office")
                     return true;
 
-            try
-            {
-                return Configuration.Extensions.Contains(fileType.Extension);
-            }
-            catch
-            {
-                return false;
-            }
+            return false;
+            //try
+            //{
+            //    return Configuration.Extensions.Contains(fileType.Extension);
+            //}
+            //catch
+            //{
+            //    return false;
+            //}
         }
 
 

@@ -1,4 +1,5 @@
 ﻿using MySqlConnector;
+using System.Data;
 
 namespace Move7.Helper
 {
@@ -33,6 +34,17 @@ namespace Move7.Helper
             MySqlCommand cmd = new MySqlCommand(query, con);
             cmd.ExecuteNonQuery();
             CloseDB();
+        }
+
+        private DataTable ExecuteReader(string query)
+        {
+            OpenDB();
+            MySqlCommand cmd = new MySqlCommand(query, con);
+            MySqlDataReader dr = cmd.ExecuteReader();
+            DataTable dt = new DataTable();
+            dt.Load(dr);
+            CloseDB();
+            return dt;
         }
 
         private MySqlCommand ExecuteTransaction(string query)
@@ -113,6 +125,31 @@ namespace Move7.Helper
                 Logging.LogException(ex);
             }
             return null;
+        }
+
+
+        public DataTable GetMoveData()
+        {
+            string query = "select d.dept, (select group_concat(ee.ext) ext from department dd, " +
+                "extension ee, dept_ext xx where dd.dept=xx.dept and xx.ext = ee.ext and ee.enabled = 1 " +
+                "and (xx.direction = 1 or xx.direction = 3) and d.dept = dd.dept group by dd.dept) ext_in, " +
+                "(select group_concat(ee.ext) ext from department dd, extension ee, dept_ext xx " +
+                "where dd.dept=xx.dept and xx.ext = ee.ext and ee.enabled = 1 " +
+                "and (xx.direction = 2 or xx.direction = 3) and d.dept =dd.dept group by dd.dept) ext_out, " +
+                "d.local_path, d.net_path from department d where d.enabled = 1 " +
+                "and (select group_concat(ee.ext) ext from department dd, extension ee, dept_ext xx " +
+                "where dd.dept=xx.dept and xx.ext = ee.ext and ee.enabled = 1 and " +
+                "(xx.direction = 1 or xx.direction = 3) and d.dept = dd.dept group by dd.dept) is not null " +
+                "or (select group_concat(ee.ext) ext from department dd, extension ee, dept_ext xx " +
+                "where dd.dept=xx.dept and xx.ext = ee.ext and ee.enabled = 1 and " +
+                "(xx.direction = 2 or xx.direction = 3) and d.dept = dd.dept group by dd.dept) is not null " +
+                "order by d.dept";
+             return ExecuteReader(query);
+        }
+
+        public DataTable GetConfig() {
+            string query = "select `key`, value from config";
+            return ExecuteReader(query);
         }
     }
 }
