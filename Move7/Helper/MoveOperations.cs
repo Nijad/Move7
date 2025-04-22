@@ -143,8 +143,8 @@ namespace Move7.Helper
                 {
                     Dept = deptMoveData.Dept,
                     Destination = "local",
-                    From = deptMoveData.NetPath + "//OUT",
-                    To = deptMoveData.LocalPath + "//IN"
+                    From = deptMoveData.NetPath + "\\OUT",
+                    To = deptMoveData.LocalPath + "\\IN"
                 };
                 MoveFiles(pathInfo);
             }
@@ -156,8 +156,8 @@ namespace Move7.Helper
                 {
                     Dept = deptMoveData.Dept,
                     Destination = "net",
-                    From = deptMoveData.LocalPath + "//OUT",
-                    To = deptMoveData.NetPath + "//IN"
+                    From = deptMoveData.LocalPath + "\\OUT",
+                    To = deptMoveData.NetPath + "\\IN"
                 };
                 MoveFiles(pathInfo);
             }
@@ -165,7 +165,7 @@ namespace Move7.Helper
 
         private static void MoveToRejected(FileInfo file, string rejectedReason)
         {
-            string rejectedDirectory = path.From + $"rejected\\{rejectedReason}";
+            string rejectedDirectory = path.From + $"\\rejected\\{rejectedReason}";
             if (!Directory.Exists(rejectedDirectory))
                 Directory.CreateDirectory(rejectedDirectory);
 
@@ -263,12 +263,13 @@ namespace Move7.Helper
         }
 
         private static bool CheckFileExtension(bool firstCall = true)
+        
         {
-            if (!allowedExtensions.Contains(fileType.Extension))
+            if (!allowedExtensions.Contains(fileInfo.Extension.Substring(1).ToLower()))
                 return false;
 
             if (fileType.Extension.ToLower() == "bin")
-                if (firstCall && fileType.MimeType.ToLower() == "application/vnd.ms-outlook")
+                if (firstCall && fileInfo.Extension == ".msg" && fileType.MimeType.ToLower() == "application/vnd.ms-outlook")
                 {
                     MapiMessage email = MapiMessage.FromMailMessage(fileInfo.FullName);
                     foreach (MapiAttachment attachment in email.Attachments)
@@ -281,28 +282,42 @@ namespace Move7.Helper
                     }
                     return true;
                 }
+                else if (fileInfo.Extension.ToLower() == ".vsdx" && fileType.MimeType.ToLower() == "application/vnd.ms-visio.drawing.main+xml")
+                    return true;
+                else if (fileInfo.Extension.ToLower() == ".xml" && fileType.MimeType.ToLower() == "text/xml")
+                    return true;
+                else if (fileInfo.Extension.ToLower() == ".rar" && fileType.MimeType.ToLower() == "application/vnd.rar")
+                    return true;
+                else if (fileInfo.Extension.ToLower() == ".jsx" && fileType.MimeType.ToLower() == "application/javascript")
+                    return true;
+                else if (fileInfo.Extension.ToLower() == ".js" && fileType.MimeType.ToLower() == "application/javascript")
+                    return true;
+                else if (fileInfo.Extension.ToLower() == ".tsx" && fileType.MimeType.ToLower() == "application/javascript")
+                    return true;
+                else if (fileInfo.Extension.ToLower() == ".ts" && fileType.MimeType.ToLower() == "application/javascript")
+                    return true;
+            else if (fileInfo.Extension.ToLower() == ".txt" && fileType.MimeType.ToLower() == "text/x-affix")
+                    return true;
                 else
                     return false;
 
-            if (fileType.Extension.ToLower() == "xml" && fileType.MimeType.ToLower() == "text/xml")
-                return true;
-
-            if (fileType.Extension.ToLower() == "vsdx" && fileType.MimeType.ToLower() == "application/vnd.ms-visio.drawing.main+xml")
-                return true;
-
-            if (fileType.Extension.ToLower() == "thmx")//powerpoint template 
+            if (fileInfo.Extension == ".vsd" && fileType.Extension.ToLower() == "thmx")//visio
                 if (fileType.MimeType.ToLower() == "application/vnd.ms-office")
                     return true;
 
-            return false;
-            //try
-            //{
-            //    return Configuration.Extensions.Contains(fileType.Extension);
-            //}
-            //catch
-            //{
-            //    return false;
-            //}
+            if (fileType.Extension == "jpeg") //jpg, jpeg, jpe, jfif
+                return true;
+            
+            if (fileType.Extension == "tiff") //tiff, tif
+                return true;
+
+            if(fileType.Extension == "zip" && fileType.MimeType.ToLower() == "application/zip") //zip, nupkg, vsix
+                return true;
+
+            if (!allowedExtensions.Contains(fileType.Extension.ToLower()))
+                return false;
+
+            return true;
         }
 
 
