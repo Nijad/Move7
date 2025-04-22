@@ -24,7 +24,7 @@ internal class Program
         {
             bool isNewInstance;
             // "Global" ensures visibility across all sessions
-            const string mutexName = "Global\\MyUniqueApplicationName";
+            const string mutexName = "Global\\MoveAppV2";
             // Create security settings for the mutex
             MutexSecurity security = new MutexSecurity();
 
