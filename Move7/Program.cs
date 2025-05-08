@@ -1,6 +1,8 @@
 ﻿using Move7.Helper;
 using Move7.Model;
 using System.Data;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Security.AccessControl;
 using System.Security.Principal;
 
@@ -8,17 +10,53 @@ internal class Program
 {
     static bool running = true;
     static System.Timers.Timer aTimer;
-    static int seconds = 5;
+    static int secondsToClose = 5;
 
-    
+    #region Trap application termination
+    [DllImport("Kernel32")]
+    private static extern bool SetConsoleCtrlHandler(EventHandler handler, bool add);
+
+    private delegate bool EventHandler(CtrlType sig);
+    static EventHandler _handler;
+
+    enum CtrlType
+    {
+        CTRL_C_EVENT = 0,
+        CTRL_BREAK_EVENT = 1,
+        CTRL_CLOSE_EVENT = 2,
+        CTRL_LOGOFF_EVENT = 5,
+        CTRL_SHUTDOWN_EVENT = 6
+    }
+
+    private static bool Handler(CtrlType sig)
+    {
+        running = false;
+        //Console.WriteLine("Exiting system due to external CTRL-C, or process kill, or shutdown");
+        DB dB = new DB();
+        dB.Stop();
+        //do your cleanup here
+        Thread.Sleep(5000); //simulate some cleanup delay
+
+        //shutdown right away so there are no lingering threads
+        Environment.Exit(-1);
+
+        return true;
+    }
+    #endregion
+
     static void Main(string[] args)
     {
+        // Some boilerplate to react to close window event, CTRL-C, kill, etc
+        _handler += new EventHandler(Handler);
+        SetConsoleCtrlHandler(_handler, true);
+
         //must pass first argument to run to prevent run program by double click
-        if (args.Length == 0 || args[0] != "nijad")
+        if (args.Length < 2 || args[0] != "RunFromApp")
         {
             ExitCountDown();
             return;
         }
+        string username = args[1];
 
         try
         {
@@ -60,8 +98,20 @@ internal class Program
                 {
                     Console.WriteLine(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
                     Console.WriteLine("Connecting to database failed");
-                    Console.WriteLine("Program will exit. Press Enter to continue");
-                    Console.ReadLine();
+                    dB.Stop("Failed to Connect database.");
+                    ExitCountDown();
+                    return;
+                }
+                Process process = Process.GetCurrentProcess();
+                try
+                {
+                    dB.Start(username, process.Id, process.ProcessName);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine("Faild to start program.");
+                    dB.Stop("Faild to start program.");
+                    ExitCountDown();
                     return;
                 }
 
@@ -75,8 +125,9 @@ internal class Program
                     }
                     catch
                     {
-                        Console.WriteLine("Program will exit. Press Enter to continue");
-                        Console.ReadLine();
+                        Console.WriteLine("Faild to get configurations.");
+                        dB.Stop("Faild to get configurations.");
+                        ExitCountDown();
                         return;
                     }
 
@@ -88,13 +139,8 @@ internal class Program
                     }
                     catch (Exception ex)
                     {
-                        string msg = "Error occurred while reading dept-ext data from database";
-                        Logging.SendEmail(ex, msg);
-                        Console.WriteLine(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
-                        Console.WriteLine($"{msg}");
-                        Console.WriteLine($"please check log");
-                        Console.WriteLine("Program will exit. Press Enter to exit");
-                        Console.ReadLine();
+                        dB.Stop("Error occurred while reading dept-ext data from database.");
+                        ExitCountDown();
                         return;
                     }
 
@@ -116,9 +162,8 @@ internal class Program
                         Logging.SendEmail(ex, msg);
                         Console.WriteLine(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
                         Console.WriteLine($"{msg}");
-                        Console.WriteLine($"please check log");
-                        Console.WriteLine("Program will exit. Press Enter to exit");
-                        Console.ReadLine();
+                        dB.Stop(msg);
+                        ExitCountDown();
                         return;
                     }
 
@@ -135,9 +180,8 @@ internal class Program
                     {
                         Console.WriteLine(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
                         Console.WriteLine($"{ex.Message}");
-                        Console.WriteLine($"please check log");
-                        Console.WriteLine("Program will exit. Press Enter to exit");
-                        Console.ReadLine();
+                        dB.Stop(ex.Message);
+                        ExitCountDown();
                         return;
                     }
                 }
@@ -146,20 +190,17 @@ internal class Program
         catch (PlatformNotSupportedException ex)
         {
             Console.WriteLine("Access Control List (ACL) APIs are part of resource management on Windows and are not supported on this platform.");
-            Console.WriteLine("Press Enter to exit.");
-            Console.ReadLine();
+            ExitCountDown();
         }
         catch (UnauthorizedAccessException ex)
         {
             Console.WriteLine("Program is already running.");
-            Console.WriteLine("Press Enter to exit.");
-            Console.ReadLine();
+            ExitCountDown();
         }
         catch
         {
             Console.WriteLine("Something went wrong.");
-            Console.WriteLine("Press Enter to exit.");
-            Console.ReadLine();
+            ExitCountDown();
         }
     }
 
@@ -245,8 +286,8 @@ internal class Program
         Console.SetCursorPosition(0, Console.CursorTop);
         Console.Write(new string(' ', Console.WindowWidth));
         Console.SetCursorPosition(0, currentLineCursor);
-        Console.Write(--seconds);
-        if (seconds == 0)
+        Console.Write(--secondsToClose);
+        if (secondsToClose == 0)
             Environment.Exit(1);
     }
 
@@ -265,9 +306,11 @@ internal class Program
         // Start the timer
         aTimer.Enabled = true;
 
-        Console.WriteLine($"Program will exit after {seconds} seconds,\n\nOr Press the Enter key to exit the program\n");
-        if (seconds > 0)
+        Console.WriteLine($"Program will exit after {secondsToClose} seconds,\n\nOr Press the Enter key to exit the program\n");
+        if (secondsToClose > 0)
             Console.ReadLine();
         return;
+        //Environment.Exit(1);
     }
+
 }

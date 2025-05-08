@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "Move7": {
+      "commandName": "Project",
+      "commandLineArgs": "RunFromApp nijad",
+      "jsWebView2Debugging": false
+    }
+  }
+}
