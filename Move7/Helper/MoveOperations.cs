@@ -14,8 +14,21 @@ namespace Move7.Helper
         internal static void MoveFiles(PathInfo pathInfo)
         {
             path = pathInfo;
+            string[] files = [];
             //get all files in directory
-            string[] files = GetAllFiles(pathInfo.From);
+            try
+            {
+                Directory.GetFiles(pathInfo.From);
+            }
+            catch (Exception ex)
+            {
+                string msg = $"Can not Get files from {pathInfo.From}";
+                Logging.WriteNotes(msg);
+                Logging.LogException(ex);
+                Logging.SendEmail(ex, msg);
+                throw new Exception(msg, ex);
+            }
+
             //loop for all files above
             foreach (string file in files)
             {
@@ -44,28 +57,48 @@ namespace Move7.Helper
                 }
                 catch (DllNotFoundException ex)
                 {
+                    string msg = $"Faild to get file type of {fileInfo.FullName}";
+                    Logging.LogException(ex);
+                    Logging.WriteNotes(msg);
                     continue;
                 }
                 catch (BadImageFormatException ex)
                 {
+                    string msg = $"Faild to get file type of {fileInfo.FullName}";
+                    Logging.LogException(ex);
+                    Logging.WriteNotes(msg);
                     continue;
                 }
                 catch (MagicException ex)
                 {
+                    string msg = $"Faild to get file type of {fileInfo.FullName}";
+                    Logging.LogException(ex);
+                    Logging.WriteNotes(msg);
                     continue;
                 }
                 catch (Exception ex)
                 {
+                    string msg = $"Faild to get file type of {fileInfo.FullName}";
+                    Logging.LogException(ex);
+                    Logging.WriteNotes(msg);
                     continue;
                 }
 
                 //check file extension and type
                 if (!CheckFileExtension())
                 {
-                    string msg = "file extension is not in allowed extensions list";
+                    string msg = "File extension is not allowed";
                     msg += $"\nfile name : {fileInfo.Name} - dept : {path.Dept} - destination : {path.Destination}";
                     Logging.WriteNotes(msg);
-                    MoveToRejected(fileInfo, "extension");
+                    try
+                    {
+                        MoveToRejected(fileInfo, "extension");
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.LogException(ex);
+                        Logging.SendEmail(ex, $"Faild to move file {fileInfo.FullName} to rejected folder");
+                    }
                     continue;
                 }
 
@@ -78,14 +111,24 @@ namespace Move7.Helper
                         msg += $"\nfile name : {fileInfo.Name} - dept : {path.Dept} - destination : {path.Destination}";
                         Logging.WriteNotes(msg);
                         //move file to rejected folder
-                        MoveToRejected(fileInfo, "size");
+                        try
+                        {
+                            MoveToRejected(fileInfo, "size");
+                        }
+                        catch (Exception ex)
+                        {
+                            Logging.LogException(ex);
+                            Logging.WriteNotes(msg);
+                        }
                         continue;
                     }
                     else if (fileInfo.Length == 0)
                         continue;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    Logging.LogException(ex);
+                    Logging.SendEmail(ex);
                     continue;
                 }
 
@@ -98,10 +141,12 @@ namespace Move7.Helper
                 }
                 catch (Exception ex)
                 {
-                    string msg = ex.Message;
+                    string msg = $"Faild to insert moved file data into database.";
                     msg += $"\nfile name : {fileInfo.Name} - dept : {path.Dept} - destination : {path.Destination}";
+                    Logging.SendEmail(ex, msg);
+                    Logging.LogException(ex);
                     Logging.WriteNotes(msg);
-                    throw new Exception(msg);
+                    throw new Exception(msg, ex);
                 }
 
 
@@ -113,8 +158,14 @@ namespace Move7.Helper
                 }
                 catch (Exception ex)
                 {
+                    string msg = "Can not move file to backup folder";
+                    msg += $"\nfile name : {fileInfo.Name} - dept : {path.Dept} - destination : {path.Destination}";
+                    Logging.WriteNotes(msg);
+                    Logging.LogException(ex);
+                    Logging.SendEmail(ex, msg);
+
                     dB.Rollback(cmd);
-                    throw new Exception(ex.Message);
+                    throw new Exception($"Faild to copy file {fileInfo.FullName} to backup folder.", ex);
                 }
 
                 //move file to destination folder
@@ -122,10 +173,24 @@ namespace Move7.Helper
                 {
                     MoveFileToDestinationFolder(fileInfo);
                 }
-                catch (Exception)
+                catch (Exception ex)
                 {
+                    string msg = "Faild to move file to destination folder";
+                    msg += $"\nfile name : {fileInfo.Name} - dept : {path.Dept} - destination : {path.Destination}";
+                    Logging.WriteNotes(msg);
+                    Logging.LogException(ex);
+                    Logging.SendEmail(ex, msg);
                     if (!string.IsNullOrEmpty(backupFile))
-                        DeleteFile(backupFile);
+                        try
+                        {
+                            File.Delete(backupFile);
+                        }
+                        catch (Exception e)
+                        {
+                            msg = $"Can not delete file {backupFile} from backup folder";
+                            Logging.WriteNotes(msg);
+                            Logging.LogException(e);
+                        }
                     dB.Rollback(cmd);
                     continue;
                 }
@@ -177,93 +242,53 @@ namespace Move7.Helper
                 file.MoveTo($"{rejectedDirectory}\\{fileParts[0]}-{datetime}");
         }
 
-        private static void DeleteFile(string backupFile)
-        {
-            try
-            {
-                File.Delete(backupFile);
-            }
-            catch (Exception ex)
-            {
-                string msg = "Can not delete file from backup folder";
-                Logging.WriteNotes(msg);
-                Logging.LogException(ex);
-            }
-        }
-
         private static void MoveFileToDestinationFolder(FileInfo file)
         {
-            try
+            string fl = path.To + $"\\{file.Name}";
+            if (File.Exists(fl))
             {
-                string fl = path.To + $"\\{file.Name}";
-                if (File.Exists(fl))
-                {
-                    string datetime = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-                    string[] fileParts = file.Name.Split('.');
-                    file.MoveTo(path.To + $"\\{fileParts[0]}-{datetime}.{fileParts[1]}");
-                }
-                else
-                    file.MoveTo(path.To + $"\\{file.Name}");
+                string datetime = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+                string[] fileParts = file.Name.Split('.');
+                file.MoveTo(path.To + $"\\{fileParts[0]}-{datetime}.{fileParts[1]}");
             }
-            catch (Exception ex)
-            {
-                string msg = "Can not move file to destination folder";
-                msg += $"\nfile name : {file.Name} - dept : {path.Dept} - destination : {path.Destination}";
-                Logging.WriteNotes(msg);
-                Logging.LogException(ex);
-                Logging.SendEmail(ex, msg);
-                throw new Exception(msg);
-            }
+            else
+                file.MoveTo(path.To + $"\\{file.Name}");
         }
 
         private static string CopyFileToBackupFolder(FileInfo file)
         {
+            string backupFile = "";
+            string BackupPath = Configuration.BackupPath;
+            if (!Directory.Exists(BackupPath))
+                Directory.CreateDirectory(BackupPath);
+            string today = DateTime.Now.ToString("yyyy-MM-dd");
 
-            try
+            BackupPath += $"\\{today}";
+            if (!Directory.Exists(BackupPath))
+                Directory.CreateDirectory(BackupPath);
+
+            BackupPath += $"\\{path.Dept}";
+            if (!Directory.Exists(BackupPath))
+                Directory.CreateDirectory(BackupPath);
+
+            BackupPath += $"\\Moved_To-{path.Destination}";
+            if (!Directory.Exists(BackupPath))
+                Directory.CreateDirectory(BackupPath);
+
+            string fl = BackupPath + $"\\{file.Name}";
+            if (File.Exists(fl))
             {
-                string backupFile = "";
-                string BackupPath = Configuration.BackupPath;
-                if (!Directory.Exists(BackupPath))
-                    Directory.CreateDirectory(BackupPath);
-                string today = DateTime.Now.ToString("yyyy-MM-dd");
-
-                BackupPath += $"\\{today}";
-                if (!Directory.Exists(BackupPath))
-                    Directory.CreateDirectory(BackupPath);
-
-                BackupPath += $"\\{path.Dept}";
-                if (!Directory.Exists(BackupPath))
-                    Directory.CreateDirectory(BackupPath);
-
-                BackupPath += $"\\Moved_To-{path.Destination}";
-                if (!Directory.Exists(BackupPath))
-                    Directory.CreateDirectory(BackupPath);
-
-                string fl = BackupPath + $"\\{file.Name}";
-                if (File.Exists(fl))
-                {
-                    string datetime = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
-                    string[] fileParts = file.Name.Split('.');
-                    backupFile = BackupPath + $"\\{fileParts[0]}-{datetime}.{fileParts[1]}";
-                }
-                else
-                    backupFile = BackupPath + $"\\{file.Name}";
-                file.CopyTo(backupFile);
-                return backupFile;
+                string datetime = DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss");
+                string[] fileParts = file.Name.Split('.');
+                backupFile = BackupPath + $"\\{fileParts[0]}-{datetime}.{fileParts[1]}";
             }
-            catch (Exception ex)
-            {
-                string msg = "Can not move file to audit folder";
-                msg += $"\nfile name : {file.Name} - dept : {path.Dept} - destination : {path.Destination}";
-                Logging.WriteNotes(msg);
-                Logging.LogException(ex);
-                Logging.SendEmail(ex, msg);
-                throw new Exception(msg);
-            }
+            else
+                backupFile = BackupPath + $"\\{file.Name}";
+            file.CopyTo(backupFile);
+            return backupFile;
         }
 
         private static bool CheckFileExtension(bool firstCall = true)
-        
         {
             if (!allowedExtensions.Contains(fileInfo.Extension.Substring(1).ToLower()))
                 return false;
@@ -296,7 +321,7 @@ namespace Move7.Helper
                     return true;
                 else if (fileInfo.Extension.ToLower() == ".ts" && fileType.MimeType.ToLower() == "application/javascript")
                     return true;
-            else if (fileInfo.Extension.ToLower() == ".txt" && fileType.MimeType.ToLower() == "text/x-affix")
+                else if (fileInfo.Extension.ToLower() == ".txt" && fileType.MimeType.ToLower() == "text/x-affix")
                     return true;
                 else
                     return false;
@@ -307,34 +332,17 @@ namespace Move7.Helper
 
             if (fileType.Extension == "jpeg") //jpg, jpeg, jpe, jfif
                 return true;
-            
+
             if (fileType.Extension == "tiff") //tiff, tif
                 return true;
 
-            if(fileType.Extension == "zip" && fileType.MimeType.ToLower() == "application/zip") //zip, nupkg, vsix
+            if (fileType.Extension == "zip" && fileType.MimeType.ToLower() == "application/zip") //zip, nupkg, vsix
                 return true;
 
             if (!allowedExtensions.Contains(fileType.Extension.ToLower()))
                 return false;
 
             return true;
-        }
-
-
-        private static string[] GetAllFiles(string from)
-        {
-            try
-            {
-                return Directory.GetFiles(from);
-            }
-            catch (Exception ex)
-            {
-                string msg = $"Can not Get files from {from}";
-                Logging.WriteNotes(msg);
-                Logging.LogException(ex);
-                Logging.SendEmail(ex, msg);
-                return null;
-            }
         }
     }
 }

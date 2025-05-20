@@ -72,20 +72,8 @@ namespace Move7.Helper
 
         public void CheckDatabaseConnection()
         {
-            try
-            {
-                OpenDB();
-                CloseDB();
-            }
-            catch (Exception ex)
-            {
-                //write in log here
-                string msg = "Can not connect database.";
-                Logging.WriteNotes(msg);
-                Logging.SendEmail(ex, msg);
-                Logging.LogException(ex);
-                throw ex;
-            }
+            OpenDB();
+            CloseDB();
         }
 
         public void CreateTableIfNotExist()
@@ -111,20 +99,10 @@ namespace Move7.Helper
             long size, string dept, string destination)
         {
             string escapedValue = MySqlHelper.EscapeString(name);
-            try
-            {
-                string query = "INSERT INTO `movedfiles`(`name`, `Ext`, `RealExt`, `size`, `Dept`, `Destination`) " +
-                    $"VALUES ('{escapedValue}', '{extension}', '{realExtension}', '{size}', '{dept}', '{destination}')";
-                MySqlCommand cmd = ExecuteTransaction(query);
-                return cmd;
-            }
-            catch (Exception ex)
-            {
-                string msg = "Can not write in database";
-                Logging.SendEmail(ex, msg);
-                Logging.LogException(ex);
-            }
-            return null;
+            string query = "INSERT INTO `movedfiles`(`name`, `Ext`, `RealExt`, `size`, `Dept`, `Destination`) " +
+                $"VALUES ('{escapedValue}', '{extension}', '{realExtension}', '{size}', '{dept}', '{destination}')";
+            MySqlCommand cmd = ExecuteTransaction(query);
+            return cmd;
         }
 
 
@@ -145,19 +123,7 @@ namespace Move7.Helper
                     "where dd.dept=xx.dept and xx.ext = ee.ext and ee.enabled = 1 and " +
                     "(xx.direction = 2 or xx.direction = 3) and d.dept = dd.dept group by dd.dept) is not null " +
                     "order by d.dept";
-            try
-            {
-                dt = ExecuteReader(query);
-            }
-            catch (Exception ex)
-            {
-                string msg = "Error occurred while reading dept-ext data from database.";
-                Logging.SendEmail(ex, msg);
-                Console.WriteLine(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
-                Console.WriteLine($"{msg}");
-                throw;
-            }
-            return dt;
+            return ExecuteReader(query);
         }
 
         public DataTable GetConfig()
@@ -172,17 +138,7 @@ namespace Move7.Helper
                 $"error_message=null, start_at =  SYSDATE() , stop_at = null, " +
                 $"process_id = {processId}, process_name = '{procsessName}', " +
                 $"user = '{username}' where terminal_no = 0";
-            try
-            {
-                ExecuteNonQuery(query);
-            }
-            catch (Exception ex)
-            {
-                string msg = "Faild to start program.";
-                Logging.SendEmail(ex, msg);
-                Logging.LogException(ex);
-                throw;
-            }
+            ExecuteNonQuery(query);
         }
 
         public void Stop(string errorMsg = "")
