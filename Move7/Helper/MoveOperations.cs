@@ -18,7 +18,7 @@ namespace Move7.Helper
             //get all files in directory
             try
             {
-                Directory.GetFiles(pathInfo.From);
+                files = Directory.GetFiles(pathInfo.From);
             }
             catch (Exception ex)
             {
