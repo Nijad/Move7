@@ -188,7 +188,6 @@ namespace Move7.Helper
 
         private static string CopyFileToBackupFolder(FileInfo file)
         {
-
             try
             {
                 string backupFile = "";
@@ -249,10 +248,12 @@ namespace Move7.Helper
                     }
                     return true;
                 }
+                else if(fileType.MimeType == "application/encrypted" && fileInfo.Extension == ".xlsx")
+                    return true;
+                else if (fileType.MimeType == "application/encrypted" && fileInfo.Extension == ".docx")
+                    return true;
                 else
-                {
                     return false;
-                }
 
             if (fileType.MimeType.ToLower() == "text/xml")
                 return true;
