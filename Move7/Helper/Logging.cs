@@ -83,6 +83,7 @@ namespace Move7.Helper
 
         public static void SendEmail(Exception ex, string msg = "")
         {
+            return;
             try
             {
                 SmtpClient smtp = new SmtpClient();

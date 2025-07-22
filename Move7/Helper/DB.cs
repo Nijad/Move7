@@ -72,6 +72,7 @@ namespace Move7.Helper
 
         public void CheckDatabaseConnection()
         {
+            //throw new Exception("test");
             OpenDB();
             CloseDB();
         }

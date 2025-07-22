@@ -76,8 +76,7 @@ internal class Program
         //must pass first argument to run to prevent run program by double click
         if (args.Length < 2 || args[0] != "RunFromApp")
         {
-            ExitCountDown(0);
-
+            ExitCountDown(4);
         }
         string username = args[1];
 
@@ -102,7 +101,7 @@ internal class Program
                 if (!isNewInstance)
                 {
                     Console.WriteLine("Program is already running.");
-                    ExitCountDown(0);
+                    ExitCountDown(4);
                 }
                 // Apply security settings to the mutex
                 mutex.SetAccessControl(security);
@@ -118,14 +117,14 @@ internal class Program
                 }
                 catch (Exception ex)
                 {
-                    string msg = "faild to Connect database.";
+                    string msg = "Faild to connect database.";
                     Logging.WriteNotes(msg);
                     Logging.SendEmail(ex, msg);
                     Logging.LogException(ex);
                     Console.WriteLine(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
                     Console.WriteLine(msg);
                     dB.Stop(msg);
-                    ExitCountDown(1);
+                    ExitCountDown(5);
                 }
                 Process process = Process.GetCurrentProcess();
                 try
@@ -141,7 +140,7 @@ internal class Program
                     //program was not started and faild to update database
                     //so stop procedure will be faild and no need
                     //dB.Stop(msg);
-                    ExitCountDown(1);
+                    ExitCountDown(5);
                 }
 
                 Console.WriteLine("Program start successfuly");
@@ -159,7 +158,7 @@ internal class Program
                         Logging.LogException(ex);
                         Console.WriteLine(msg);
                         dB.Stop(msg);
-                        ExitCountDown(1);
+                        ExitCountDown(5);
                     }
 
                     List<DeptMoveData> moveData = new();
@@ -176,7 +175,7 @@ internal class Program
                         Console.WriteLine(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
                         Console.WriteLine($"{msg}");
                         dB.Stop(msg);
-                        ExitCountDown(1);
+                        ExitCountDown(5);
                     }
 
                     try
@@ -199,7 +198,7 @@ internal class Program
                         Console.WriteLine(DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss"));
                         Console.WriteLine($"{msg}");
                         dB.Stop(msg);
-                        ExitCountDown(1);
+                        ExitCountDown(6);
                     }
 
                     Console.WriteLine(DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + $"    -    run no {++i}");
@@ -216,7 +215,7 @@ internal class Program
                             if (++j >= moveData.Count)
                             {
                                 dB.Stop(ex.Message);
-                                ExitCountDown(1);
+                                ExitCountDown(5);
                             }
                         }
 

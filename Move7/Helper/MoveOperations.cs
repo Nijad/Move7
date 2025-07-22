@@ -323,6 +323,10 @@ namespace Move7.Helper
                     return true;
                 else if (fileInfo.Extension.ToLower() == ".txt" && fileType.MimeType.ToLower() == "text/x-affix")
                     return true;
+                else if (fileInfo.Extension.ToLower() == ".xlsx" && fileType.MimeType.ToLower() == "application/encrypted")
+                    return true;
+                else if (fileInfo.Extension.ToLower() == ".docx" && fileType.MimeType.ToLower() == "application/encrypted")
+                    return true;
                 else
                     return false;
 
